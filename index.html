@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App de Transporte Local</title>
+    <title>App de Transporte Mariara</title>
     
     <!-- Librería para Mapas (Leaflet CSS y JS) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -61,7 +61,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        h1, h2 {
+        h1, h2, h3 {
             margin-top: 0;
             text-align: center;
             font-weight: 700;
@@ -150,18 +150,6 @@
             border: 1px solid #e2e8f0;
         }
 
-        .btn-group {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .btn-group button {
-            flex: 1;
-            margin-top: 0;
-        }
-
-        /* Estilos del Mapa */
         #mapaPasajero, #mapaConductor {
             width: 100%;
             height: 260px;
@@ -199,6 +187,11 @@
         .trip-box.pending {
             border-left-color: var(--warning);
             background: #fffbeb;
+        }
+
+        .trip-box.cancelled {
+            border-left-color: var(--danger);
+            background: #fef2f2;
         }
 
         .pulse-text {
@@ -273,50 +266,54 @@
 <body>
 
     <div class="container">
-        <!-- SELECCIÓN DE ROL -->
+        <!-- SELECCIÓN DE ROL / INICIO -->
         <div class="card active" id="seccionInicio">
-            <h1>🚕 Bienvenido</h1>
+            <h1>🚕 App Mariara</h1>
             <p class="subtitle">¿Cómo deseas moverte hoy?</p>
             <button class="btn-role" type="button" onclick="abrirModuloPasajero()">🚖 Soy Pasajero</button>
             <button class="btn-role btn-secondary" type="button" onclick="abrirModuloConductor()">🛵 Soy Conductor</button>
         </div>
 
-        <!-- MÓDULO PASAJERO CON MAPA -->
+        <!-- MÓDULO PASAJERO CON MAPA Y AUTENTICACIÓN -->
         <div class="card" id="seccionPasajero">
             <button class="btn-back" type="button" onclick="irA('seccionInicio')">← Volver al Inicio</button>
-            <h2>🚖 Pedir un Viaje</h2>
+            <h2>🚖 Módulo Pasajero</h2>
             
-            <!-- REGISTRO PASAJERO -->
+            <!-- REGISTRO Y LOGIN DE PASAJERO -->
             <div id="formRegistroPasajero">
-                <p class="subtitle">Ingresa tus datos para conectarte con los conductores</p>
+                <p class="subtitle">Inicia sesión o regístrate como pasajero</p>
                 
-                <label>Nombre y Apellido</label>
-                <input type="text" id="pasNombre" placeholder="Ej. Juan Pérez" required>
+                <label>Correo Electrónico</label>
+                <input type="email" id="pasEmail" placeholder="ejemplo@correo.com" required>
 
-                <label>Número de Teléfono</label>
-                <input type="tel" id="pasTelefono" placeholder="Ej. 04121234567" required>
+                <label>Contraseña</label>
+                <input type="password" id="pasPassword" placeholder="******" required>
 
-                <label>Cédula de Identidad</label>
-                <input type="text" id="pasCedula" placeholder="Ej. V-20123456" required>
+                <div id="camposCrearPasajero">
+                    <label>Nombre y Apellido</label>
+                    <input type="text" id="pasNombre" placeholder="Ej. Juan Pérez">
 
-                <button type="button" onclick="registrarPasajero()">Comenzar a Viajar 🚀</button>
+                    <label>Número de Teléfono</label>
+                    <input type="tel" id="pasTelefono" placeholder="Ej. 04121234567">
+                </div>
+
+                <button type="button" id="btnAuthPasajero" onclick="autenticarPasajero()">Ingresar / Registrarse</button>
             </div>
 
             <!-- PANEL SOLICITUD DE VIAJE -->
             <div id="panelSolicitudPasajero" style="display: none;">
                 <div class="user-greeting">
-                    <span>👋 Hola, <strong id="lblNombrePasajero"></strong></span>
-                    <a href="#" onclick="cerrarSesionPasajero()" style="color:var(--danger); text-decoration:none;">Cambiar datos</a>
+                    <span>👋 Hola, <strong id="lblNombrePasajero">Pasajero</strong></span>
+                    <a href="#" onclick="cerrarSesion()" style="color:var(--danger); text-decoration:none;">Cerrar Sesión</a>
                 </div>
 
                 <div class="map-instruction" id="instruccionMapa">
                     📍 Haz clic en el mapa para marcar el <strong>Punto de Salida</strong>.
                 </div>
 
-                <!-- CONTENEDOR DEL MAPA PASAJERO -->
                 <div id="mapaPasajero"></div>
 
-                <label>Vehículo Disponibles</label>
+                <label>Vehículo Disponible</label>
                 <select id="vehiculo" onchange="calcularTarifaYRuta()">
                     <option value="moto">🛵 Moto</option>
                     <option value="carro">🚗 Carro</option>
@@ -335,40 +332,49 @@
             </div>
         </div>
 
-        <!-- MÓDULO CONDUCTOR -->
+        <!-- MÓDULO CONDUCTOR CON VERIFICACIÓN -->
         <div class="card" id="seccionConductor">
             <button class="btn-back" type="button" onclick="irA('seccionInicio')">← Volver al Inicio</button>
-            <h2>🛵 Registro de Conductor</h2>
+            <h2>🛵 Módulo Conductor</h2>
             
             <div id="formRegistroConductor">
-                <p class="subtitle">Completa tu expediente legal para recibir viajes</p>
-                <label>Datos Personales</label>
-                <input type="text" id="regNombre" placeholder="Nombre completo" required>
-                <input type="text" id="regTelefono" placeholder="Teléfono de contacto" required>
-                <input type="text" id="regPlaca" placeholder="Placa del vehículo / moto" required>
+                <p class="subtitle">Accede a tu cuenta o regístrate como conductor</p>
                 
-                <label>Tipo de Vehículo</label>
-                <select id="regVehiculo">
-                    <option value="moto">Moto</option>
-                    <option value="carro">Carro</option>
-                </select>
+                <label>Correo Electrónico</label>
+                <input type="email" id="condEmail" placeholder="conductor@correo.com" required>
 
-                <label>Documentos <span style="color:var(--danger)">*Obligatorios</span></label>
-                <input type="file" id="docCedula" accept="image/*,.pdf" required>
-                <input type="file" id="docLicencia" accept="image/*,.pdf" required>
-                <input type="file" id="docVehiculo" accept="image/*" required>
+                <label>Contraseña</label>
+                <input type="password" id="condPassword" placeholder="******" required>
 
-                <div class="terms-box" style="margin-top:10px;">
-                    <strong>CONTRATO Y TÉRMINOS</strong><br>
-                    Plataforma de intermediación. Se aplica comisión del 10% por viaje realizado.
+                <div id="camposExtraConductor">
+                    <label>Datos Personales</label>
+                    <input type="text" id="regNombre" placeholder="Nombre completo">
+                    <input type="text" id="regTelefono" placeholder="Teléfono de contacto">
+                    <input type="text" id="regPlaca" placeholder="Placa del vehículo / moto">
+                    
+                    <label>Tipo de Vehículo</label>
+                    <select id="regVehiculo">
+                        <option value="moto">Moto</option>
+                        <option value="carro">Carro</option>
+                    </select>
+
+                    <label>Documentos <span style="color:var(--danger)">*Obligatorios</span></label>
+                    <input type="file" id="docCedula" accept="image/*,.pdf">
+                    <input type="file" id="docLicencia" accept="image/*,.pdf">
+                    <input type="file" id="docVehiculo" accept="image/*">
+
+                    <div class="terms-box" style="margin-top:10px;">
+                        <strong>CONTRATO Y TÉRMINOS</strong><br>
+                        Plataforma de intermediación. Se aplica comisión del 10% por viaje realizado.
+                    </div>
+
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="checkTerminos" onchange="validarFormConductor()">
+                        <label for="checkTerminos">Acepto los términos legales y confirmo mis documentos.</label>
+                    </div>
                 </div>
 
-                <div class="checkbox-container">
-                    <input type="checkbox" id="checkTerminos" onchange="document.getElementById('btnRegistrarConductor').disabled = !this.checked">
-                    <label for="checkTerminos">Acepto los términos legales y confirmo mis documentos.</label>
-                </div>
-
-                <button id="btnRegistrarConductor" disabled type="button" onclick="registrarConductor()">Enviar Datos y Crear Cuenta</button>
+                <button id="btnRegistrarConductor" type="button" onclick="autenticarConductor()">Ingresar / Enviar Expediente</button>
                 <div id="statusSubida" style="font-size: 12px; text-align: center; margin-top: 6px;"></div>
             </div>
 
@@ -378,12 +384,18 @@
                     Tus documentos están siendo revisados por nuestro equipo.<br>
                     <strong>Estado:</strong> En revisión.
                 </div>
+                <button class="btn-back" style="width:100%; margin-top:10px;" type="button" onclick="verificarSesionSupabase()">🔄 Verificar Estado de Aprobación</button>
+                <button class="btn-logout" style="width:100%;" type="button" onclick="cerrarSesion()">Cerrar Sesión</button>
             </div>
 
             <div id="panelActivoConductor" style="display: none;">
+                <div class="user-greeting">
+                    <span>🛵 Conductor: <strong id="lblNombreConductor">Aprobado</strong></span>
+                    <a href="#" onclick="cerrarSesion()" style="color:var(--danger); text-decoration:none;">Cerrar Sesión</a>
+                </div>
+
                 <button id="btnActivarRecepcion" style="background: var(--success);" type="button" onclick="escucharViajes()">Activar Recepción de Viajes</button>
 
-                <!-- MAPA NAVEGACIÓN CONDUCTOR -->
                 <div id="contenedorMapaConductor" style="display: none; margin-top: 12px;">
                     <div class="map-instruction">🗺️ Navegación en Curso</div>
                     <div id="mapaConductor"></div>
@@ -391,34 +403,26 @@
 
                 <div id="listaViajes"></div>
             </div>
-
-            <div id="bloqueCerrarSesion" style="display: none;">
-                <button class="btn-logout" type="button" onclick="cerrarSesionConductor()">Cerrar Sesión</button>
-            </div>
         </div>
     </div>
 
     <!-- SDK Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // CONFIGURACIÓN DE SUPABASE
         const SUPABASE_URL = "https://ryjyzslrjdrmcdhgjcmb.supabase.co";
         const SUPABASE_KEY = "sb_publishable_eDxke8Rp8mKR1yjWrmJ63g_5847bVkS";
         let supabaseClient = null;
-        let canalViajes = null, canalCliente = null, canalEstatusConductor = null, canalRastreoPasajero = null;
+
+        let viajeActualId = null;
         let conductorIdActual = null, pasajeroIdActual = null;
         let watchPosId = null;
 
-        let viajesOmitidosLocalmente = [];
-
         // Mapa Pasajero
         let map = null;
-        let markerOrigen = null, markerDestino = null, markerConductorPasajero = null, rutaPolyline = null;
+        let markerOrigen = null, markerDestino = null, rutaPolyline = null;
         let coordsOrigen = null, coordsDestino = null;
         let distanciaKmCalculada = 0, precioEstimadoCalculado = 0;
-
-        // Mapa Conductor
-        let mapConductor = null;
-        let markerConductorUbicacion = null, markerOrigenCond = null, markerDestinoCond = null, rutaPolylineConductor = null;
 
         function getClient() {
             if (!supabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
@@ -434,7 +438,7 @@
         }
 
         // ==========================================
-        // LÓGICA DE TARIFAS Y MULTIPLICADORES POR HORARIO
+        // TARIFAS Y MULTIPLICADORES DE HORARIO
         // ==========================================
         function obtenerMultiplicadorHorario() {
             const hora = new Date().getHours();
@@ -453,7 +457,7 @@
                 tarifaBase = 1.00;
                 precioPorKm = 0.40;
                 tarifaMinima = 1.50;
-            } else { // Carro único
+            } else { 
                 tarifaBase = 2.00;
                 precioPorKm = 0.70;
                 tarifaMinima = 2.50;
@@ -471,7 +475,181 @@
         }
 
         // ==========================================
-        // MAPA Y GEOLOCALIZACIÓN PASAJERO
+        // GESTIÓN DE SESIÓN PERSISTENTE CON SUPABASE
+        // ==========================================
+        async function verificarSesionSupabase() {
+            const client = getClient();
+            if (!client) return;
+
+            const { data: { session } } = await client.auth.getSession();
+
+            if (session) {
+                const user = session.user;
+                
+                const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).single();
+
+                if (profile) {
+                    if (profile.role === 'conductor') {
+                        conductorIdActual = profile.id;
+                        if (profile.aprobado) {
+                            document.getElementById('lblNombreConductor').innerText = profile.nombre || user.email;
+                            document.getElementById('formRegistroConductor').style.display = 'none';
+                            document.getElementById('pantallaEsperaConductor').style.display = 'none';
+                            document.getElementById('panelActivoConductor').style.display = 'block';
+                            irA('seccionConductor');
+                            iniciarGeolocalizacionConductor();
+                        } else {
+                            document.getElementById('formRegistroConductor').style.display = 'none';
+                            document.getElementById('pantallaEsperaConductor').style.display = 'block';
+                            document.getElementById('panelActivoConductor').style.display = 'none';
+                            irA('seccionConductor');
+                        }
+                    } else if (profile.role === 'pasajero') {
+                        pasajeroIdActual = profile.id;
+                        document.getElementById('lblNombrePasajero').innerText = profile.nombre || user.email;
+                        document.getElementById('formRegistroPasajero').style.display = 'none';
+                        document.getElementById('panelSolicitudPasajero').style.display = 'block';
+                        irA('seccionPasajero');
+                        setTimeout(() => { inicializarMapaPasajero(); if (map) map.invalidateSize(); }, 300);
+                    }
+                }
+            }
+        }
+
+        async function cerrarSesion() {
+            const client = getClient();
+            if (client) await client.auth.signOut();
+            if (watchPosId) navigator.geolocation.clearWatch(watchPosId);
+            conductorIdActual = null;
+            pasajeroIdActual = null;
+            window.location.reload();
+        }
+
+        // ==========================================
+        // AUTENTICACIÓN PASAJERO
+        // ==========================================
+        function abrirModuloPasajero() {
+            irA('seccionPasajero');
+            verificarSesionSupabase();
+        }
+
+        async function autenticarPasajero() {
+            const email = document.getElementById('pasEmail').value.trim();
+            const password = document.getElementById('pasPassword').value.trim();
+            const nombre = document.getElementById('pasNombre').value.trim();
+            const telefono = document.getElementById('pasTelefono').value.trim();
+
+            if (!email || !password) return alert("Ingresa correo y contraseña.");
+            const client = getClient();
+            if (!client) return;
+
+            let { data: authData, error } = await client.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                if (!nombre || !telefono) return alert("Por favor completa nombre y teléfono para crear tu cuenta.");
+                
+                const res = await client.auth.signUp({ email, password });
+                if (res.error) return alert("Error al registrarse: " + res.error.message);
+                authData = res.data;
+
+                await client.from('profiles').insert([{
+                    id: authData.user.id,
+                    nombre: nombre,
+                    telefono: telefono,
+                    role: 'pasajero',
+                    aprobado: true
+                }]);
+            }
+
+            verificarSesionSupabase();
+        }
+
+        // ==========================================
+        // AUTENTICACIÓN Y REGISTRO DE CONDUCTOR
+        // ==========================================
+        function abrirModuloConductor() {
+            irA('seccionConductor');
+            verificarSesionSupabase();
+        }
+
+        function validarFormConductor() {
+            document.getElementById('btnRegistrarConductor').disabled = !document.getElementById('checkTerminos').checked;
+        }
+
+        async function subirDocumento(fileInput, tipoDoc) {
+            const client = getClient();
+            const file = fileInput.files[0];
+            if (!file || !client) return null;
+
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}_${tipoDoc}.${fileExt}`;
+                const { error } = await client.storage.from('documentos_conductores').upload(fileName, file);
+                if (error) return null;
+
+                const { data: publicUrl } = client.storage.from('documentos_conductores').getPublicUrl(fileName);
+                return publicUrl.publicUrl;
+            } catch (e) { return null; }
+        }
+
+        async function autenticarConductor() {
+            const email = document.getElementById('condEmail').value.trim();
+            const password = document.getElementById('condPassword').value.trim();
+
+            if (!email || !password) return alert("Ingresa correo y contraseña.");
+            const client = getClient();
+            if (!client) return;
+
+            let { data: authData, error } = await client.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                const nombre = document.getElementById('regNombre').value.trim();
+                const telefono = document.getElementById('regTelefono').value.trim();
+                const placa = document.getElementById('regPlaca').value.trim();
+                const vehiculo = document.getElementById('regVehiculo').value;
+
+                const fileCedula = document.getElementById('docCedula').files[0];
+                const fileLicencia = document.getElementById('docLicencia').files[0];
+                const fileVehiculo = document.getElementById('docVehiculo').files[0];
+
+                if (!nombre || !telefono || !placa || !fileCedula || !fileLicencia || !fileVehiculo) {
+                    return alert("⚠️ Por favor completa todos los campos y adjunta los 3 documentos.");
+                }
+
+                document.getElementById('statusSubida').innerText = "Subiendo documentos...";
+
+                const urlCedula = await subirDocumento(document.getElementById('docCedula'), 'cedula');
+                const urlLicencia = await subirDocumento(document.getElementById('docLicencia'), 'licencia');
+                const urlVehiculo = await subirDocumento(document.getElementById('docVehiculo'), 'vehiculo');
+
+                const res = await client.auth.signUp({ email, password });
+                if (res.error) return alert("Error al crear cuenta: " + res.error.message);
+                authData = res.data;
+
+                await client.from('profiles').insert([{
+                    id: authData.user.id,
+                    nombre: nombre,
+                    telefono: telefono,
+                    role: 'conductor',
+                    aprobado: false
+                }]);
+
+                await client.from('conductores').insert([{
+                    usuario_id: authData.user.id,
+                    tipo_vehiculo: vehiculo,
+                    placa: placa,
+                    url_cedula: urlCedula,
+                    url_licencia: urlLicencia,
+                    url_vehiculo: urlVehiculo,
+                    estado_verificacion: 'pendiente'
+                }]);
+            }
+
+            verificarSesionSupabase();
+        }
+
+        // ==========================================
+        // MAPA Y SOLICITUD DE VIAJES (PASAJERO)
         // ==========================================
         function inicializarMapaPasajero() {
             if (map) return;
@@ -479,9 +657,7 @@
             const latDefault = 10.2469, lngDefault = -67.5958;
             map = L.map('mapaPasajero').setView([latDefault, lngDefault], 14);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
 
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(position => {
@@ -499,7 +675,7 @@
                     }).addTo(map).bindPopup("📍 Punto de Recogida (Tú)").openPopup();
 
                     document.getElementById('instruccionMapa').innerHTML = "🏁 Ahora haz clic en el mapa para marcar el <strong>Punto de Destino</strong>.";
-                }, () => console.warn("GPS no disponible."));
+                });
             }
 
             map.on('click', onMapClick);
@@ -518,7 +694,7 @@
                     })
                 }).addTo(map).bindPopup("📍 Punto de Recogida").openPopup();
 
-                document.getElementById('instruccionMapa').innerHTML = "🏁 Ahora haz clic para seleccionar el <strong>Punto de Destino</strong>.";
+                document.getElementById('instruccionMapa').innerHTML = "🏁 Haz clic para seleccionar el <strong>Punto de Destino</strong>.";
 
             } else if (!coordsDestino) {
                 coordsDestino = { lat, lng };
@@ -530,7 +706,7 @@
                     })
                 }).addTo(map).bindPopup("🏁 Punto de Llegada").openPopup();
 
-                document.getElementById('instruccionMapa').innerHTML = "✅ ¡Ruta fijada! Revisa el costo y presiona Pedir Conductor.";
+                document.getElementById('instruccionMapa').innerHTML = "✅ ¡Ruta fijada! Revisa el costo y solicita el viaje.";
                 calcularTarifaYRuta();
             }
         }
@@ -549,7 +725,7 @@
                     distanciaKmCalculada = (route.distance / 1000).toFixed(2);
 
                     if (rutaPolyline) map.removeLayer(rutaPolyline);
-                    
+
                     const coordinates = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
                     rutaPolyline = L.polyline(coordinates, { color: '#2563eb', weight: 5, opacity: 0.8 }).addTo(map);
                     map.fitBounds(rutaPolyline.getBounds(), { padding: [30, 30] });
@@ -570,7 +746,7 @@
 
                     document.getElementById('btnPedirViaje').disabled = false;
                 }
-            } catch (e) { console.error("Error al calcular ruta OSRM:", e); }
+            } catch (e) { console.error("Error al calcular ruta:", e); }
         }
 
         function reiniciarPuntosMapa() {
@@ -588,62 +764,12 @@
             document.getElementById('instruccionMapa').innerHTML = "📍 Haz clic en el mapa para marcar el <strong>Punto de Salida</strong>.";
         }
 
-        // ==========================================
-        // FLUJOS DE PASAJERO
-        // ==========================================
-        function abrirModuloPasajero() {
-            irA('seccionPasajero');
-            const savedPasajeroId = localStorage.getItem('pasajero_id');
-            const savedPasajeroNombre = localStorage.getItem('pasajero_nombre');
-
-            if (savedPasajeroId && savedPasajeroNombre) {
-                pasajeroIdActual = savedPasajeroId;
-                document.getElementById('lblNombrePasajero').innerText = savedPasajeroNombre;
-                document.getElementById('formRegistroPasajero').style.display = 'none';
-                document.getElementById('panelSolicitudPasajero').style.display = 'block';
-                setTimeout(() => { inicializarMapaPasajero(); if (map) map.invalidateSize(); }, 200);
-            } else {
-                document.getElementById('formRegistroPasajero').style.display = 'block';
-                document.getElementById('panelSolicitudPasajero').style.display = 'none';
-            }
-        }
-
-        async function registrarPasajero() {
-            const nombre = document.getElementById('pasNombre').value.trim();
-            const telefono = document.getElementById('pasTelefono').value.trim();
-            const cedula = document.getElementById('pasCedula').value.trim();
-
-            if (!nombre || !telefono || !cedula) return alert("Por favor completa todos tus datos.");
-            const client = getClient();
-            if (!client) return alert("Error de conexión.");
-
-            try {
-                const { data: usr, error } = await client.from('usuarios').insert([{ nombre, telefono, rol: 'pasajero' }]).select().single();
-                if (error || !usr) throw new Error(error ? error.message : "Error al registrar.");
-
-                pasajeroIdActual = usr.id;
-                localStorage.setItem('pasajero_id', usr.id);
-                localStorage.setItem('pasajero_nombre', nombre);
-
-                document.getElementById('lblNombrePasajero').innerText = nombre;
-                document.getElementById('formRegistroPasajero').style.display = 'none';
-                document.getElementById('panelSolicitudPasajero').style.display = 'block';
-                setTimeout(() => { inicializarMapaPasajero(); if (map) map.invalidateSize(); }, 200);
-            } catch (e) { alert("Error al registrarse: " + e.message); }
-        }
-
-        function cerrarSesionPasajero() {
-            localStorage.removeItem('pasajero_id');
-            localStorage.removeItem('pasajero_nombre');
-            pasajeroIdActual = null;
-            document.getElementById('formRegistroPasajero').style.display = 'block';
-            document.getElementById('panelSolicitudPasajero').style.display = 'none';
-        }
-
         async function solicitarViaje() {
-            if (!coordsOrigen || !coordsDestino) return alert("Por favor selecciona tu origen y destino en el mapa.");
+            if (!coordsOrigen || !coordsDestino) return alert("Selecciona origen y destino.");
             const client = getClient();
             if (!client) return;
+
+            document.getElementById('btnPedirViaje').disabled = true;
 
             try {
                 const { data, error } = await client.from('viajes').insert([{
@@ -659,295 +785,115 @@
                     estado: 'solicitado'
                 }]).select().single();
 
-                if (!error && data) escucharEstadoViajeCliente(data.id);
-            } catch (e) { console.error("Error al solicitar viaje:", e); }
-
-            actualizarEstadoUIBuscando();
+                if (!error && data) {
+                    viajeActualId = data.id;
+                    escucharEstadoViajeCliente(data.id);
+                    mostrarEstadoBuscandoViaje();
+                }
+            } catch (e) { console.error("Error solicitando viaje:", e); }
         }
 
-        function actualizarEstadoUIBuscando() {
+        function mostrarEstadoBuscandoViaje() {
             document.getElementById('statusCliente').innerHTML = `
                 <div class="trip-box pending" id="boxStatusCliente">
                     <strong class="pulse-text">🔍 Buscando conductores cercanos...</strong><br>
-                    Tu solicitud sigue activa hasta que un conductor acepte.<br>
-                    Monto estimado: <strong>$${precioEstimadoCalculado}</strong>
+                    Monto estimado: <strong>$${precioEstimadoCalculado}</strong><br>
+                    <button type="button" class="btn-danger" style="margin-top:10px;" onclick="cancelarViajePasajero()">❌ Cancelar Viaje</button>
                 </div>`;
+        }
+
+        async function cancelarViajePasajero() {
+            if (!viajeActualId) return;
+            const client = getClient();
+            if (!client) return;
+
+            const { error } = await client.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeActualId);
+
+            if (!error) {
+                alert("Has cancelado el viaje.");
+                viajeActualId = null;
+                document.getElementById('statusCliente').innerHTML = `
+                    <div class="trip-box cancelled">
+                        <strong>Viaje Cancelado</strong>
+                    </div>`;
+                document.getElementById('btnPedirViaje').disabled = false;
+            }
         }
 
         function escucharEstadoViajeCliente(viajeId) {
             const client = getClient();
             if (!client) return;
-            if (canalCliente) client.removeChannel(canalCliente);
 
-            canalCliente = client.channel(`viaje:${viajeId}`)
+            client.channel(`viaje:${viajeId}`)
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: `id=eq.${viajeId}` }, payload => {
                     if (payload.new.estado === 'aceptado') {
-                        const box = document.getElementById('boxStatusCliente');
-                        if (box) {
-                            box.className = "trip-box accepted";
-                            box.innerHTML = `
+                        document.getElementById('statusCliente').innerHTML = `
+                            <div class="trip-box accepted">
                                 <strong>¡Conductor en Camino! 🎉</strong><br>
-                                Tu viaje ha sido aceptado con éxito.<br>
                                 Monto a cancelar: <strong>$${payload.new.precio_estimado}</strong>
-                            `;
-                        }
-                        if (payload.new.conductor_id) {
-                            rastrearConductorEnMapaPasajero(payload.new.conductor_id);
-                        }
-                    } else if (payload.new.estado === 'solicitado') {
-                        actualizarEstadoUIBuscando();
-                    }
-                }).subscribe();
-        }
-
-        function rastrearConductorEnMapaPasajero(conductorId) {
-            const client = getClient();
-            if (!client) return;
-
-            if (canalRastreoPasajero) client.removeChannel(canalRastreoPasajero);
-
-            canalRastreoPasajero = client.channel(`rastreo:${conductorId}`)
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conductores', filter: `id=eq.${conductorId}` }, payload => {
-                    const { lat_actual, lng_actual } = payload.new;
-                    if (lat_actual && lng_actual && map) {
-                        if (!markerConductorPasajero) {
-                            markerConductorPasajero = L.marker([lat_actual, lng_actual], {
-                                icon: L.icon({
-                                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
-                                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-                                })
-                            }).addTo(map).bindPopup("🛵 Conductor en Camino").openPopup();
-                        } else {
-                            markerConductorPasajero.setLatLng([lat_actual, lng_actual]);
-                        }
+                            </div>`;
+                    } else if (payload.new.estado === 'cancelado') {
+                        document.getElementById('statusCliente').innerHTML = `
+                            <div class="trip-box cancelled">
+                                <strong>El viaje fue cancelado.</strong>
+                            </div>`;
+                        document.getElementById('btnPedirViaje').disabled = false;
                     }
                 }).subscribe();
         }
 
         // ==========================================
-        // MÓDULO Y GEOLOCALIZACIÓN DEL CONDUCTOR
+        // NAVEGACIÓN CONDUCTOR Y RECEPCIÓN DE VIAJES
         // ==========================================
-        async function abrirModuloConductor() {
-            irA('seccionConductor');
-            const savedConductorId = localStorage.getItem('conductor_id');
-
-            if (savedConductorId) {
-                conductorIdActual = savedConductorId;
-                await verificarEstatusConductor(savedConductorId);
-            } else {
-                mostrarVistaRegistroConductor();
-            }
-        }
-
-        function mostrarVistaRegistroConductor() {
-            document.getElementById('formRegistroConductor').style.display = 'block';
-            document.getElementById('pantallaEsperaConductor').style.display = 'none';
-            document.getElementById('panelActivoConductor').style.display = 'none';
-            document.getElementById('bloqueCerrarSesion').style.display = 'none';
-        }
-
-        async function verificarEstatusConductor(conductorId) {
-            const client = getClient();
-            if (!client) return;
-
-            try {
-                const { data: cond, error } = await client.from('conductores').select('id, estado_verificacion').eq('id', conductorId).single();
-                if (error || !cond) {
-                    localStorage.removeItem('conductor_id');
-                    mostrarVistaRegistroConductor();
-                    return;
-                }
-
-                const estado = cond.estado_verificacion ? cond.estado_verificacion.toLowerCase().trim() : 'pendiente';
-
-                if (estado === 'aprobado') {
-                    document.getElementById('formRegistroConductor').style.display = 'none';
-                    document.getElementById('pantallaEsperaConductor').style.display = 'none';
-                    document.getElementById('panelActivoConductor').style.display = 'block';
-                    document.getElementById('bloqueCerrarSesion').style.display = 'block';
-                    iniciarGeolocalizacionConductor();
-                } else {
-                    document.getElementById('formRegistroConductor').style.display = 'none';
-                    document.getElementById('pantallaEsperaConductor').style.display = 'block';
-                    document.getElementById('panelActivoConductor').style.display = 'none';
-                    document.getElementById('bloqueCerrarSesion').style.display = 'block';
-                    escucharAprobacionEnVivo(conductorId);
-                }
-            } catch (e) { console.error("Error al consultar estado:", e); }
-        }
-
-        function escucharAprobacionEnVivo(conductorId) {
-            const client = getClient();
-            if (!client) return;
-
-            if (canalEstatusConductor) client.removeChannel(canalEstatusConductor);
-
-            canalEstatusConductor = client.channel(`conductor:${conductorId}`)
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conductores', filter: `id=eq.${conductorId}` }, payload => {
-                    const nuevoEstado = payload.new.estado_verificacion ? payload.new.estado_verificacion.toLowerCase().trim() : '';
-                    if (nuevoEstado === 'aprobado') {
-                        document.getElementById('pantallaEsperaConductor').style.display = 'none';
-                        document.getElementById('panelActivoConductor').style.display = 'block';
-                        iniciarGeolocalizacionConductor();
-                        alert("🎉 ¡Tu cuenta de conductor ha sido aprobada!");
-                    }
-                }).subscribe();
-        }
-
         function iniciarGeolocalizacionConductor() {
             if (!("geolocation" in navigator) || !conductorIdActual) return;
-
-            if (watchPosId) navigator.geolocation.clearWatch(watchPosId);
 
             watchPosId = navigator.geolocation.watchPosition(async position => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
-
                 const client = getClient();
+
                 if (client && conductorIdActual) {
-                    await client.from('conductores').update({
-                        lat_actual: lat,
-                        lng_actual: lng
-                    }).eq('id', conductorIdActual);
+                    await client.from('conductores').update({ lat_actual: lat, lng_actual: lng }).eq('id', conductorIdActual);
                 }
-
-                if (mapConductor) {
-                    if (!markerConductorUbicacion) {
-                        markerConductorUbicacion = L.marker([lat, lng], {
-                            icon: L.icon({
-                                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
-                                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-                            })
-                        }).addTo(mapConductor).bindPopup("📍 Tu Ubicación Actual").openPopup();
-                    } else {
-                        markerConductorUbicacion.setLatLng([lat, lng]);
-                    }
-                }
-            }, err => console.warn("Error en GPS conductor:", err), {
-                enableHighAccuracy: true,
-                maximumAge: 5000,
-                timeout: 10000
-            });
+            }, null, { enableHighAccuracy: true, timeout: 10000 });
         }
 
-        function cerrarSesionConductor() {
-            if (watchPosId) navigator.geolocation.clearWatch(watchPosId);
-            localStorage.removeItem('conductor_id');
-            conductorIdActual = null;
-            if (canalEstatusConductor) getClient()?.removeChannel(canalEstatusConductor);
-            mostrarVistaRegistroConductor();
-        }
-
-        async function subirDocumento(fileInput, tipoDoc) {
-            const client = getClient();
-            const file = fileInput.files[0];
-            if (!file || !client) return null;
-
-            try {
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${Date.now()}_${tipoDoc}.${fileExt}`;
-
-                const { error } = await client.storage.from('documentos_conductores').upload(fileName, file);
-                if (error) return null;
-
-                const { data: publicUrl } = client.storage.from('documentos_conductores').getPublicUrl(fileName);
-                return publicUrl.publicUrl;
-            } catch (e) { return null; }
-        }
-
-        async function registrarConductor() {
-            const nombre = document.getElementById('regNombre').value.trim();
-            const telefono = document.getElementById('regTelefono').value.trim();
-            const placa = document.getElementById('regPlaca').value.trim();
-            const vehiculo = document.getElementById('regVehiculo').value;
-
-            const fileCedula = document.getElementById('docCedula').files[0];
-            const fileLicencia = document.getElementById('docLicencia').files[0];
-            const fileVehiculo = document.getElementById('docVehiculo').files[0];
-
-            if (!nombre || !telefono || !placa || !fileCedula || !fileLicencia || !fileVehiculo) {
-                return alert("⚠️ Por favor completa todos los campos y adjunta los 3 documentos.");
-            }
-
-            const btnSubmit = document.getElementById('btnRegistrarConductor');
-            btnSubmit.disabled = true;
-
-            const client = getClient();
-            if (!client) return;
-
-            try {
-                const urlCedula = await subirDocumento(document.getElementById('docCedula'), 'cedula');
-                const urlLicencia = await subirDocumento(document.getElementById('docLicencia'), 'licencia');
-                const urlVehiculo = await subirDocumento(document.getElementById('docVehiculo'), 'vehiculo');
-
-                if (!urlCedula || !urlLicencia || !urlVehiculo) {
-                    btnSubmit.disabled = false;
-                    return alert("Error al subir los archivos.");
-                }
-
-                const { data: usr } = await client.from('usuarios').insert([{ nombre, telefono, rol: 'conductor' }]).select().single();
-
-                const { data: cond } = await client.from('conductores').insert([{
-                    usuario_id: usr.id, tipo_vehiculo: vehiculo, placa,
-                    url_cedula: urlCedula, url_licencia: urlLicencia, url_vehiculo: urlVehiculo,
-                    estado_verificacion: 'pendiente', saldo_prepago: 5.00, disponible: false
-                }]).select().single();
-
-                conductorIdActual = cond.id;
-                localStorage.setItem('conductor_id', cond.id);
-
-                document.getElementById('formRegistroConductor').style.display = 'none';
-                document.getElementById('pantallaEsperaConductor').style.display = 'block';
-                document.getElementById('bloqueCerrarSesion').style.display = 'block';
-
-                escucharAprobacionEnVivo(cond.id);
-
-            } catch (e) {
-                btnSubmit.disabled = false;
-                alert("Ocurrió un error en el registro: " + e.message);
-            }
-        }
-
-        // ==========================================
-        // LISTA Y GESTIÓN DE VIAJES CONDUCTOR
-        // ==========================================
         async function escucharViajes() {
             const client = getClient();
             const contenedor = document.getElementById('listaViajes');
             if (!client) return;
 
-            if (canalViajes) client.removeChannel(canalViajes);
+            contenedor.innerHTML = "<div class='trip-box'>Cargando solicitudes...</div>";
 
-            contenedor.innerHTML = "<div class='trip-box'>Cargando solicitudes activas...</div>";
+            // 1. Cargar únicamente viajes en estado 'solicitado'
+            const { data: viajesPendientes } = await client.from('viajes').select('*').eq('estado', 'solicitado');
+            contenedor.innerHTML = "";
 
-            try {
-                const { data: viajesPendientes } = await client
-                    .from('viajes')
-                    .select('*')
-                    .eq('estado', 'solicitado')
-                    .order('creado_en', { ascending: false });
+            if (!viajesPendientes || viajesPendientes.length === 0) {
+                contenedor.innerHTML = "<div class='trip-box' id='msgSinViajes'>Esperando solicitudes en tiempo real...</div>";
+            } else {
+                viajesPendientes.forEach(v => agregarTarjetaViaje(v));
+            }
 
-                contenedor.innerHTML = "";
-                
-                const viajesFiltrados = (viajesPendientes || []).filter(v => !viajesOmitidosLocalmente.includes(v.id));
-
-                if (viajesFiltrados.length === 0) {
-                    contenedor.innerHTML = "<div class='trip-box' id='msgNoViajes'>Esperando solicitudes en tiempo real...</div>";
-                } else {
-                    viajesFiltrados.forEach(v => agregarTarjetaViaje(v));
-                }
-            } catch (e) { console.error("Error consultando viajes:", e); }
-
-            canalViajes = client.channel('public:viajes')
+            // 2. Suscribirse a cambios en la tabla 'viajes'
+            client.channel('public:viajes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, payload => {
-                    if (payload.new.estado === 'solicitado' && !viajesOmitidosLocalmente.includes(payload.new.id)) {
+                    if (payload.new.estado === 'solicitado') {
+                        document.getElementById('msgSinViajes')?.remove();
                         agregarTarjetaViaje(payload.new);
                     }
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes' }, payload => {
-                    if (payload.new.estado !== 'solicitado') removerTarjetaViaje(payload.new.id);
+                    // Si el viaje ya NO está 'solicitado' (fue aceptado por otro o cancelado), lo removemos
+                    if (payload.new.estado !== 'solicitado') {
+                        const tarjeta = document.getElementById(`viaje-${payload.new.id}`);
+                        if (tarjeta) tarjeta.remove();
+                        
+                        if (contenedor.children.length === 0) {
+                            contenedor.innerHTML = "<div class='trip-box' id='msgSinViajes'>Esperando solicitudes en tiempo real...</div>";
+                        }
+                    }
                 })
                 .subscribe();
 
@@ -956,10 +902,7 @@
 
         function agregarTarjetaViaje(viaje) {
             const contenedor = document.getElementById('listaViajes');
-            const msgEmpty = document.getElementById('msgNoViajes');
-            if (msgEmpty) msgEmpty.remove();
-
-            if (document.getElementById(`viaje-${viaje.id}`)) return;
+            if (document.getElementById(`viaje-${viaje.id}`)) return; // Evitar duplicados
 
             const elem = document.createElement('div');
             elem.className = 'trip-box';
@@ -967,94 +910,27 @@
             elem.innerHTML = `
                 <strong>¡Nuevo Viaje Solicitado! 📍</strong><br>
                 <strong>Distancia:</strong> ${viaje.distancia_km} km<br>
-                <strong>Monto total:</strong> $${viaje.precio_estimado}<br>
-                <div class="btn-group">
-                    <button type="button" onclick="aceptarViaje('${viaje.id}', ${viaje.lat_origen}, ${viaje.lng_origen}, ${viaje.lat_destino}, ${viaje.lng_destino})">Aceptar Viaje</button>
-                    <button type="button" class="btn-danger" onclick="rechazarViaje('${viaje.id}')">No Aceptar</button>
-                </div>
+                <strong>Monto:</strong> $${viaje.precio_estimado}<br>
+                <button type="button" onclick="aceptarViaje('${viaje.id}')">Aceptar Viaje</button>
             `;
             contenedor.prepend(elem);
         }
 
-        function removerTarjetaViaje(viajeId) {
-            const elem = document.getElementById(`viaje-${viajeId}`);
-            if (elem) elem.remove();
-
-            const contenedor = document.getElementById('listaViajes');
-            if (contenedor && contenedor.children.length === 0) {
-                contenedor.innerHTML = "<div class='trip-box' id='msgNoViajes'>Esperando solicitudes en tiempo real...</div>";
-            }
-        }
-
-        function rechazarViaje(viajeId) {
-            viajesOmitidosLocalmente.push(viajeId);
-            removerTarjetaViaje(viajeId);
-        }
-
-        async function aceptarViaje(viajeId, latOrigen, lngOrigen, latDestino, lngDestino) {
+        async function aceptarViaje(viajeId) {
             const client = getClient();
             if (!client) return;
 
-            const { error } = await client
-                .from('viajes')
-                .update({ estado: 'aceptado', conductor_id: conductorIdActual })
-                .eq('id', viajeId);
+            const { error } = await client.from('viajes').update({ estado: 'aceptado', conductor_id: conductorIdActual }).eq('id', viajeId);
 
             if (!error) {
-                removerTarjetaViaje(viajeId);
-                alert("¡Has aceptado el viaje con éxito!");
-                mostrarMapaConductor(latOrigen, lngOrigen, latDestino, lngDestino);
+                alert("¡Has aceptado el viaje!");
+                document.getElementById(`viaje-${viajeId}`)?.remove();
             } else {
-                alert("Este viaje ya ha sido tomado por otro conductor.");
+                alert("Este viaje ya no está disponible.");
             }
         }
 
-        function mostrarMapaConductor(latOrigen, lngOrigen, latDestino, lngDestino) {
-            const contenedor = document.getElementById('contenedorMapaConductor');
-            contenedor.style.display = 'block';
-
-            if (!mapConductor) {
-                mapConductor = L.map('mapaConductor').setView([latOrigen, lngOrigen], 14);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(mapConductor);
-            } else {
-                if (markerOrigenCond) mapConductor.removeLayer(markerOrigenCond);
-                if (markerDestinoCond) mapConductor.removeLayer(markerDestinoCond);
-                if (rutaPolylineConductor) mapConductor.removeLayer(rutaPolylineConductor);
-            }
-
-            markerOrigenCond = L.marker([latOrigen, lngOrigen], {
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-                })
-            }).addTo(mapConductor).bindPopup("📍 Recoger Pasajero").openPopup();
-
-            markerDestinoCond = L.marker([latDestino, lngDestino], {
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-                })
-            }).addTo(mapConductor).bindPopup("🏁 Destino Final");
-
-            const urlOSRM = `https://router.project-osrm.org/route/v1/driving/${lngOrigen},${latOrigen};${lngDestino},${latDestino}?overview=full&geometries=geojson`;
-
-            fetch(urlOSRM)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.routes && data.routes.length > 0) {
-                        const coordinates = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                        rutaPolylineConductor = L.polyline(coordinates, { color: '#2563eb', weight: 5, opacity: 0.8 }).addTo(mapConductor);
-                        mapConductor.fitBounds(rutaPolylineConductor.getBounds(), { padding: [30, 30] });
-                    }
-                })
-                .catch(e => console.error("Error cargando ruta conductor:", e));
-
-            setTimeout(() => mapConductor.invalidateSize(), 300);
-        }
+        document.addEventListener('DOMContentLoaded', verificarSesionSupabase);
     </script>
 </body>
 </html>
