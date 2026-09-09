@@ -99,6 +99,12 @@
             margin-top: 10px;
         }
 
+        .btn-auth-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
         button {
             background: var(--primary);
             color: white;
@@ -107,6 +113,7 @@
             cursor: pointer;
             margin-top: 10px;
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            border-radius: 10px;
         }
 
         button:hover {
@@ -128,6 +135,11 @@
 
         .btn-secondary {
             background: var(--secondary);
+            box-shadow: 0 4px 12px rgba(71, 85, 105, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: var(--secondary-hover);
         }
 
         .btn-danger {
@@ -261,6 +273,18 @@
             align-items: center;
             margin-bottom: 12px;
         }
+
+        .error-msg {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+            border: 1px solid #fca5a5;
+        }
     </style>
 </head>
 <body>
@@ -283,21 +307,29 @@
             <div id="formRegistroPasajero">
                 <p class="subtitle">Inicia sesión o regístrate como pasajero</p>
                 
+                <label>Tipo de Usuario</label>
+                <select id="pasTipoUsuario" disabled>
+                    <option value="pasajero">Pasajero 🚖</option>
+                </select>
+
                 <label>Correo Electrónico</label>
                 <input type="email" id="pasEmail" placeholder="ejemplo@correo.com" required>
 
                 <label>Contraseña</label>
-                <input type="password" id="pasPassword" placeholder="******" required>
+                <input type="password" id="pasPassword" placeholder="****** (mínimo 6 caracteres)" required>
 
-                <div id="camposCrearPasajero">
-                    <label>Nombre y Apellido</label>
-                    <input type="text" id="pasNombre" placeholder="Ej. Juan Pérez">
+                <label>Nombre y Apellido</label>
+                <input type="text" id="pasNombre" placeholder="Ej. Juan Pérez">
 
-                    <label>Número de Teléfono</label>
-                    <input type="tel" id="pasTelefono" placeholder="Ej. 04121234567">
+                <label>Número de Teléfono</label>
+                <input type="tel" id="pasTelefono" placeholder="Ej. 04121234567">
+
+                <div class="btn-auth-group">
+                    <button type="button" onclick="iniciarSesionPasajero()">Iniciar Sesión</button>
+                    <button type="button" class="btn-secondary" onclick="registrarPasajero()">Registrarse</button>
                 </div>
 
-                <button type="button" id="btnAuthPasajero" onclick="autenticarPasajero()">Ingresar / Registrarse</button>
+                <div id="msgErrorPasajero" class="error-msg"></div>
             </div>
 
             <!-- PANEL SOLICITUD DE VIAJE -->
@@ -374,8 +406,13 @@
                     </div>
                 </div>
 
-                <button id="btnRegistrarConductor" type="button" onclick="autenticarConductor()">Ingresar / Enviar Expediente</button>
+                <div class="btn-auth-group">
+                    <button type="button" onclick="iniciarSesionConductor()">Iniciar Sesión</button>
+                    <button id="btnRegistrarConductor" type="button" disabled class="btn-secondary" onclick="registrarConductor()">Enviar Expediente</button>
+                </div>
+
                 <div id="statusSubida" style="font-size: 12px; text-align: center; margin-top: 6px;"></div>
+                <div id="msgErrorConductor" class="error-msg"></div>
             </div>
 
             <div id="pantallaEsperaConductor" style="display: none;">
@@ -436,6 +473,22 @@
             document.querySelectorAll('.card').forEach(p => p.classList.remove('active'));
             const destino = document.getElementById(pantallaId);
             if (destino) destino.classList.add('active');
+        }
+
+        function mostrarError(elementId, mensaje) {
+            const div = document.getElementById(elementId);
+            if (div) {
+                div.innerText = mensaje;
+                div.style.display = 'block';
+            }
+        }
+
+        function limpiarError(elementId) {
+            const div = document.getElementById(elementId);
+            if (div) {
+                div.innerText = '';
+                div.style.display = 'none';
+            }
         }
 
         // ==========================================
@@ -528,46 +581,72 @@
         }
 
         // ==========================================
-        // AUTENTICACIÓN PASAJERO
+        // AUTENTICACIÓN PASAJERO (CORREGIDA)
         // ==========================================
         function abrirModuloPasajero() {
             irA('seccionPasajero');
             verificarSesionSupabase();
         }
 
-        async function autenticarPasajero() {
+        async function iniciarSesionPasajero() {
+            limpiarError('msgErrorPasajero');
+            const email = document.getElementById('pasEmail').value.trim();
+            const password = document.getElementById('pasPassword').value.trim();
+
+            if (!email || !password) return mostrarError('msgErrorPasajero', 'Escribe tu correo y contraseña.');
+
+            const client = getClient();
+            const { error } = await client.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                mostrarError('msgErrorPasajero', 'Error al ingresar: ' + error.message);
+            } else {
+                verificarSesionSupabase();
+            }
+        }
+
+        async function registrarPasajero() {
+            limpiarError('msgErrorPasajero');
             const email = document.getElementById('pasEmail').value.trim();
             const password = document.getElementById('pasPassword').value.trim();
             const nombre = document.getElementById('pasNombre').value.trim();
             const telefono = document.getElementById('pasTelefono').value.trim();
 
-            if (!email || !password) return alert("Ingresa correo y contraseña.");
+            if (!email || !password || !nombre || !telefono) {
+                return mostrarError('msgErrorPasajero', 'Completa todos los campos (Nombre, Teléfono, Correo y Contraseña).');
+            }
+
+            if (password.length < 6) {
+                return mostrarError('msgErrorPasajero', 'La contraseña debe tener al menos 6 caracteres.');
+            }
+
             const client = getClient();
-            if (!client) return;
+            const { data: authData, error: authError } = await client.auth.signUp({ email, password });
 
-            let { data: authData, error } = await client.auth.signInWithPassword({ email, password });
+            if (authError) {
+                return mostrarError('msgErrorPasajero', 'Error al registrarse: ' + authError.message);
+            }
 
-            if (error) {
-                if (!nombre || !telefono) return alert("Por favor completa nombre y teléfono para crear tu cuenta.");
-                
-                const res = await client.auth.signUp({ email, password });
-                if (res.error) return alert("Error al registrarse: " + res.error.message);
-                authData = res.data;
-
-                await client.from('profiles').insert([{
+            if (authData.user) {
+                const { error: profileError } = await client.from('profiles').insert([{
                     id: authData.user.id,
                     nombre: nombre,
                     telefono: telefono,
                     role: 'pasajero',
                     aprobado: true
                 }]);
-            }
 
-            verificarSesionSupabase();
+                if (profileError) {
+                    mostrarError('msgErrorPasajero', 'Error creando perfil: ' + profileError.message);
+                } else {
+                    alert("¡Registro exitoso! Ya estás dentro.");
+                    verificarSesionSupabase();
+                }
+            }
         }
 
         // ==========================================
-        // AUTENTICACIÓN Y REGISTRO DE CONDUCTOR
+        // AUTENTICACIÓN Y REGISTRO DE CONDUCTOR (CORREGIDA)
         // ==========================================
         function abrirModuloConductor() {
             irA('seccionConductor');
@@ -594,40 +673,59 @@
             } catch (e) { return null; }
         }
 
-        async function autenticarConductor() {
+        async function iniciarSesionConductor() {
+            limpiarError('msgErrorConductor');
             const email = document.getElementById('condEmail').value.trim();
             const password = document.getElementById('condPassword').value.trim();
 
-            if (!email || !password) return alert("Ingresa correo y contraseña.");
-            const client = getClient();
-            if (!client) return;
+            if (!email || !password) return mostrarError('msgErrorConductor', 'Escribe tu correo y contraseña.');
 
-            let { data: authData, error } = await client.auth.signInWithPassword({ email, password });
+            const client = getClient();
+            const { error } = await client.auth.signInWithPassword({ email, password });
 
             if (error) {
-                const nombre = document.getElementById('regNombre').value.trim();
-                const telefono = document.getElementById('regTelefono').value.trim();
-                const placa = document.getElementById('regPlaca').value.trim();
-                const vehiculo = document.getElementById('regVehiculo').value;
+                mostrarError('msgErrorConductor', 'Error al ingresar: ' + error.message);
+            } else {
+                verificarSesionSupabase();
+            }
+        }
 
-                const fileCedula = document.getElementById('docCedula').files[0];
-                const fileLicencia = document.getElementById('docLicencia').files[0];
-                const fileVehiculo = document.getElementById('docVehiculo').files[0];
+        async function registrarConductor() {
+            limpiarError('msgErrorConductor');
+            const email = document.getElementById('condEmail').value.trim();
+            const password = document.getElementById('condPassword').value.trim();
+            const nombre = document.getElementById('regNombre').value.trim();
+            const telefono = document.getElementById('regTelefono').value.trim();
+            const placa = document.getElementById('regPlaca').value.trim();
+            const vehiculo = document.getElementById('regVehiculo').value;
 
-                if (!nombre || !telefono || !placa || !fileCedula || !fileLicencia || !fileVehiculo) {
-                    return alert("⚠️ Por favor completa todos los campos y adjunta los 3 documentos.");
-                }
+            const fileCedula = document.getElementById('docCedula').files[0];
+            const fileLicencia = document.getElementById('docLicencia').files[0];
+            const fileVehiculo = document.getElementById('docVehiculo').files[0];
 
-                document.getElementById('statusSubida').innerText = "Subiendo documentos...";
+            if (!email || !password || !nombre || !telefono || !placa || !fileCedula || !fileLicencia || !fileVehiculo) {
+                return mostrarError('msgErrorConductor', '⚠️ Por favor completa todos los campos y adjunta los 3 documentos.');
+            }
 
-                const urlCedula = await subirDocumento(document.getElementById('docCedula'), 'cedula');
-                const urlLicencia = await subirDocumento(document.getElementById('docLicencia'), 'licencia');
-                const urlVehiculo = await subirDocumento(document.getElementById('docVehiculo'), 'vehiculo');
+            if (password.length < 6) {
+                return mostrarError('msgErrorConductor', 'La contraseña debe tener al menos 6 caracteres.');
+            }
 
-                const res = await client.auth.signUp({ email, password });
-                if (res.error) return alert("Error al crear cuenta: " + res.error.message);
-                authData = res.data;
+            const client = getClient();
+            document.getElementById('statusSubida').innerText = "Subiendo documentos...";
 
+            const urlCedula = await subirDocumento(document.getElementById('docCedula'), 'cedula');
+            const urlLicencia = await subirDocumento(document.getElementById('docLicencia'), 'licencia');
+            const urlVehiculo = await subirDocumento(document.getElementById('docVehiculo'), 'vehiculo');
+
+            const { data: authData, error: authError } = await client.auth.signUp({ email, password });
+            
+            if (authError) {
+                document.getElementById('statusSubida').innerText = "";
+                return mostrarError('msgErrorConductor', 'Error al crear cuenta: ' + authError.message);
+            }
+
+            if (authData.user) {
                 await client.from('profiles').insert([{
                     id: authData.user.id,
                     nombre: nombre,
@@ -645,9 +743,11 @@
                     url_vehiculo: urlVehiculo,
                     estado_verificacion: 'pendiente'
                 }]);
-            }
 
-            verificarSesionSupabase();
+                document.getElementById('statusSubida').innerText = "";
+                alert("Expediente enviado con éxito.");
+                verificarSesionSupabase();
+            }
         }
 
         // ==========================================
@@ -868,7 +968,6 @@
 
             contenedor.innerHTML = "<div class='trip-box'>Cargando solicitudes...</div>";
 
-            // 1. Cargar únicamente viajes en estado 'solicitado'
             const { data: viajesPendientes } = await client.from('viajes').select('*').eq('estado', 'solicitado');
             contenedor.innerHTML = "";
 
@@ -878,12 +977,10 @@
                 viajesPendientes.forEach(v => agregarTarjetaViaje(v));
             }
 
-            // Si ya existía un canal previo activo, desuscribirlo para evitar duplicación de datos
             if (canalViajesSubscrito) {
                 client.removeChannel(canalViajesSubscrito);
             }
 
-            // 2. Suscribirse limpiamente a los cambios en tiempo real
             canalViajesSubscrito = client.channel('public:viajes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, payload => {
                     if (payload.new.estado === 'solicitado') {
@@ -892,7 +989,6 @@
                     }
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes' }, payload => {
-                    // Si el viaje cambió de estado a aceptado o cancelado, se remueve inmediatamente
                     if (payload.new.estado !== 'solicitado') {
                         const tarjeta = document.getElementById(`viaje-${payload.new.id}`);
                         if (tarjeta) tarjeta.remove();
@@ -909,7 +1005,7 @@
 
         function agregarTarjetaViaje(viaje) {
             const contenedor = document.getElementById('listaViajes');
-            if (document.getElementById(`viaje-${viaje.id}`)) return; // Evitar duplicados
+            if (document.getElementById(`viaje-${viaje.id}`)) return;
 
             const elem = document.createElement('div');
             elem.className = 'trip-box';
