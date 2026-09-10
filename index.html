@@ -99,10 +99,15 @@
             margin-top: 10px;
         }
 
-        .btn-auth-group {
+        .tab-group {
             display: flex;
             gap: 8px;
-            margin-top: 12px;
+            margin-bottom: 16px;
+        }
+
+        .tab-group button {
+            margin: 0;
+            flex: 1;
         }
 
         button {
@@ -298,19 +303,19 @@
             <button class="btn-role btn-secondary" type="button" onclick="abrirModuloConductor()">🛵 Soy Conductor</button>
         </div>
 
-        <!-- MÓDULO PASAJERO CON MAPA Y AUTENTICACIÓN -->
+        <!-- MÓDULO PASAJERO -->
         <div class="card" id="seccionPasajero">
             <button class="btn-back" type="button" onclick="irA('seccionInicio')">← Volver al Inicio</button>
             <h2>🚖 Módulo Pasajero</h2>
             
-            <!-- REGISTRO Y LOGIN DE PASAJERO -->
+            <!-- FORMULARIO PASAJERO CON PESTAÑAS -->
             <div id="formRegistroPasajero">
                 <p class="subtitle">Inicia sesión o regístrate como pasajero</p>
-                
-                <label>Tipo de Usuario</label>
-                <select id="pasTipoUsuario" disabled>
-                    <option value="pasajero">Pasajero 🚖</option>
-                </select>
+
+                <div class="tab-group">
+                    <button type="button" id="tabLoginPas" onclick="cambiarModoPasajero('login')">Iniciar Sesión</button>
+                    <button type="button" id="tabRegisterPas" class="btn-secondary" onclick="cambiarModoPasajero('registro')">Registrarse</button>
+                </div>
 
                 <label>Correo Electrónico</label>
                 <input type="email" id="pasEmail" placeholder="ejemplo@correo.com" required>
@@ -318,15 +323,18 @@
                 <label>Contraseña</label>
                 <input type="password" id="pasPassword" placeholder="****** (mínimo 6 caracteres)" required>
 
-                <label>Nombre y Apellido</label>
-                <input type="text" id="pasNombre" placeholder="Ej. Juan Pérez">
+                <!-- CAMPOS EXTRA PARA REGISTRO DE PASAJERO -->
+                <div id="camposExtraPasajero" style="display: none;">
+                    <label>Nombre y Apellido</label>
+                    <input type="text" id="pasNombre" placeholder="Ej. Juan Pérez">
 
-                <label>Número de Teléfono</label>
-                <input type="tel" id="pasTelefono" placeholder="Ej. 04121234567">
+                    <label>Número de Teléfono</label>
+                    <input type="tel" id="pasTelefono" placeholder="Ej. 04121234567">
+                </div>
 
-                <div class="btn-auth-group">
-                    <button type="button" onclick="iniciarSesionPasajero()">Iniciar Sesión</button>
-                    <button type="button" class="btn-secondary" onclick="registrarPasajero()">Registrarse</button>
+                <div style="margin-top: 12px;">
+                    <button id="btnAccionLoginPas" type="button" onclick="iniciarSesionPasajero()">Iniciar Sesión</button>
+                    <button id="btnRegistrarPasajero" type="button" style="display: none;" class="btn-secondary" onclick="registrarPasajero()">Registrarse</button>
                 </div>
 
                 <div id="msgErrorPasajero" class="error-msg"></div>
@@ -364,21 +372,28 @@
             </div>
         </div>
 
-        <!-- MÓDULO CONDUCTOR CON VERIFICACIÓN -->
+        <!-- MÓDULO CONDUCTOR -->
         <div class="card" id="seccionConductor">
             <button class="btn-back" type="button" onclick="irA('seccionInicio')">← Volver al Inicio</button>
             <h2>🛵 Módulo Conductor</h2>
             
             <div id="formRegistroConductor">
                 <p class="subtitle">Accede a tu cuenta o regístrate como conductor</p>
-                
+
+                <!-- Pestañas de Alternancia -->
+                <div class="tab-group">
+                    <button type="button" id="tabLoginCond" onclick="cambiarModoConductor('login')">Iniciar Sesión</button>
+                    <button type="button" id="tabRegisterCond" class="btn-secondary" onclick="cambiarModoConductor('registro')">Registrarse</button>
+                </div>
+
                 <label>Correo Electrónico</label>
                 <input type="email" id="condEmail" placeholder="conductor@correo.com" required>
 
                 <label>Contraseña</label>
                 <input type="password" id="condPassword" placeholder="******" required>
 
-                <div id="camposExtraConductor">
+                <!-- Campos Extra (Exclusivos para Registro) -->
+                <div id="camposExtraConductor" style="display: none;">
                     <label>Datos Personales</label>
                     <input type="text" id="regNombre" placeholder="Nombre completo">
                     <input type="text" id="regTelefono" placeholder="Teléfono de contacto">
@@ -406,9 +421,9 @@
                     </div>
                 </div>
 
-                <div class="btn-auth-group">
-                    <button type="button" onclick="iniciarSesionConductor()">Iniciar Sesión</button>
-                    <button id="btnRegistrarConductor" type="button" disabled class="btn-secondary" onclick="registrarConductor()">Enviar Expediente</button>
+                <div style="margin-top: 12px;">
+                    <button id="btnAccionLoginCond" type="button" onclick="iniciarSesionConductor()">Iniciar Sesión</button>
+                    <button id="btnRegistrarConductor" type="button" style="display: none;" disabled class="btn-secondary" onclick="registrarConductor()">Enviar Expediente</button>
                 </div>
 
                 <div id="statusSubida" style="font-size: 12px; text-align: center; margin-top: 6px;"></div>
@@ -432,11 +447,6 @@
                 </div>
 
                 <button id="btnActivarRecepcion" style="background: var(--success);" type="button" onclick="escucharViajes()">Activar Recepción de Viajes</button>
-
-                <div id="contenedorMapaConductor" style="display: none; margin-top: 12px;">
-                    <div class="map-instruction">🗺️ Navegación en Curso</div>
-                    <div id="mapaConductor"></div>
-                </div>
 
                 <div id="listaViajes"></div>
             </div>
@@ -491,9 +501,54 @@
             }
         }
 
-        // ==========================================
-        // TARIFAS Y MULTIPLICADORES DE HORARIO
-        // ==========================================
+        // CONTROL DE PESTAÑAS PASAJERO Y CONDUCTOR
+        function cambiarModoPasajero(modo) {
+            limpiarError('msgErrorPasajero');
+            const camposExtra = document.getElementById('camposExtraPasajero');
+            const btnLogin = document.getElementById('btnAccionLoginPas');
+            const btnReg = document.getElementById('btnRegistrarPasajero');
+            const tabLogin = document.getElementById('tabLoginPas');
+            const tabReg = document.getElementById('tabRegisterPas');
+
+            if (modo === 'login') {
+                camposExtra.style.display = 'none';
+                btnLogin.style.display = 'block';
+                btnReg.style.display = 'none';
+                tabLogin.style.background = 'var(--primary)';
+                tabReg.style.background = 'var(--secondary)';
+            } else {
+                camposExtra.style.display = 'block';
+                btnLogin.style.display = 'none';
+                btnReg.style.display = 'block';
+                tabLogin.style.background = 'var(--secondary)';
+                tabReg.style.background = 'var(--primary)';
+            }
+        }
+
+        function cambiarModoConductor(modo) {
+            limpiarError('msgErrorConductor');
+            const camposExtra = document.getElementById('camposExtraConductor');
+            const btnLogin = document.getElementById('btnAccionLoginCond');
+            const btnReg = document.getElementById('btnRegistrarConductor');
+            const tabLogin = document.getElementById('tabLoginCond');
+            const tabReg = document.getElementById('tabRegisterCond');
+
+            if (modo === 'login') {
+                camposExtra.style.display = 'none';
+                btnLogin.style.display = 'block';
+                btnReg.style.display = 'none';
+                tabLogin.style.background = 'var(--primary)';
+                tabReg.style.background = 'var(--secondary)';
+            } else {
+                camposExtra.style.display = 'block';
+                btnLogin.style.display = 'none';
+                btnReg.style.display = 'block';
+                tabLogin.style.background = 'var(--secondary)';
+                tabReg.style.background = 'var(--primary)';
+            }
+        }
+
+        // TARIFAS Y HORARIOS
         function obtenerMultiplicadorHorario() {
             const hora = new Date().getHours();
             if (hora >= 22 || hora < 5) {
@@ -505,17 +560,9 @@
         }
 
         function calcularPrecioJusto(distanciaKm, tipoVehiculo) {
-            let tarifaBase = 0, precioPorKm = 0, tarifaMinima = 0;
-
-            if (tipoVehiculo === 'moto') {
-                tarifaBase = 1.00;
-                precioPorKm = 0.40;
-                tarifaMinima = 1.50;
-            } else { 
-                tarifaBase = 2.00;
-                precioPorKm = 0.70;
-                tarifaMinima = 2.50;
-            }
+            let tarifaBase = tipoVehiculo === 'moto' ? 1.00 : 2.00;
+            let precioPorKm = tipoVehiculo === 'moto' ? 0.40 : 0.70;
+            let tarifaMinima = tipoVehiculo === 'moto' ? 1.50 : 2.50;
 
             const horario = obtenerMultiplicadorHorario();
             let subtotal = tarifaBase + (distanciaKm * precioPorKm);
@@ -528,9 +575,7 @@
             };
         }
 
-        // ==========================================
-        // GESTIÓN DE SESIÓN PERSISTENTE CON SUPABASE
-        // ==========================================
+        // SESIÓN Y AUTENTICACIÓN
         async function verificarSesionSupabase() {
             const client = getClient();
             if (!client) return;
@@ -539,7 +584,6 @@
 
             if (session) {
                 const user = session.user;
-                
                 const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).single();
 
                 if (profile) {
@@ -580,9 +624,6 @@
             window.location.reload();
         }
 
-        // ==========================================
-        // AUTENTICACIÓN PASAJERO (CORREGIDA)
-        // ==========================================
         function abrirModuloPasajero() {
             irA('seccionPasajero');
             verificarSesionSupabase();
@@ -613,7 +654,7 @@
             const telefono = document.getElementById('pasTelefono').value.trim();
 
             if (!email || !password || !nombre || !telefono) {
-                return mostrarError('msgErrorPasajero', 'Completa todos los campos (Nombre, Teléfono, Correo y Contraseña).');
+                return mostrarError('msgErrorPasajero', 'Completa todos los campos obligatorios.');
             }
 
             if (password.length < 6) {
@@ -639,15 +680,12 @@
                 if (profileError) {
                     mostrarError('msgErrorPasajero', 'Error creando perfil: ' + profileError.message);
                 } else {
-                    alert("¡Registro exitoso! Ya estás dentro.");
+                    alert("¡Registro exitoso!");
                     verificarSesionSupabase();
                 }
             }
         }
 
-        // ==========================================
-        // AUTENTICACIÓN Y REGISTRO DE CONDUCTOR (CORREGIDA)
-        // ==========================================
         function abrirModuloConductor() {
             irA('seccionConductor');
             verificarSesionSupabase();
@@ -704,15 +742,15 @@
             const fileVehiculo = document.getElementById('docVehiculo').files[0];
 
             if (!email || !password || !nombre || !telefono || !placa || !fileCedula || !fileLicencia || !fileVehiculo) {
-                return mostrarError('msgErrorConductor', '⚠️ Por favor completa todos los campos y adjunta los 3 documentos.');
+                return mostrarError('msgErrorConductor', '⚠️ Completa todos los datos y sube los 3 documentos.');
             }
 
             if (password.length < 6) {
-                return mostrarError('msgErrorConductor', 'La contraseña debe tener al menos 6 caracteres.');
+                return mostrarError('msgErrorConductor', 'La contraseña debe contener 6 o más caracteres.');
             }
 
             const client = getClient();
-            document.getElementById('statusSubida').innerText = "Subiendo documentos...";
+            document.getElementById('statusSubida').innerText = "Subiendo expediente...";
 
             const urlCedula = await subirDocumento(document.getElementById('docCedula'), 'cedula');
             const urlLicencia = await subirDocumento(document.getElementById('docLicencia'), 'licencia');
@@ -722,7 +760,7 @@
             
             if (authError) {
                 document.getElementById('statusSubida').innerText = "";
-                return mostrarError('msgErrorConductor', 'Error al crear cuenta: ' + authError.message);
+                return mostrarError('msgErrorConductor', 'Error al registrar: ' + authError.message);
             }
 
             if (authData.user) {
@@ -745,14 +783,12 @@
                 }]);
 
                 document.getElementById('statusSubida').innerText = "";
-                alert("Expediente enviado con éxito.");
+                alert("Expediente enviado a revisión.");
                 verificarSesionSupabase();
             }
         }
 
-        // ==========================================
-        // MAPA Y SOLICITUD DE VIAJES (PASAJERO)
-        // ==========================================
+        // FUNCIONALIDAD DE MAPA
         function inicializarMapaPasajero() {
             if (map) return;
 
@@ -776,7 +812,7 @@
                         })
                     }).addTo(map).bindPopup("📍 Punto de Recogida (Tú)").openPopup();
 
-                    document.getElementById('instruccionMapa').innerHTML = "🏁 Ahora haz clic en el mapa para marcar el <strong>Punto de Destino</strong>.";
+                    document.getElementById('instruccionMapa').innerHTML = "🏁 Haz clic en el mapa para el <strong>Punto de Destino</strong>.";
                 });
             }
 
@@ -796,7 +832,7 @@
                     })
                 }).addTo(map).bindPopup("📍 Punto de Recogida").openPopup();
 
-                document.getElementById('instruccionMapa').innerHTML = "🏁 Haz clic para seleccionar el <strong>Punto de Destino</strong>.";
+                document.getElementById('instruccionMapa').innerHTML = "🏁 Haz clic para marcar el <strong>Punto de Destino</strong>.";
 
             } else if (!coordsDestino) {
                 coordsDestino = { lat, lng };
@@ -808,7 +844,7 @@
                     })
                 }).addTo(map).bindPopup("🏁 Punto de Llegada").openPopup();
 
-                document.getElementById('instruccionMapa').innerHTML = "✅ ¡Ruta fijada! Revisa el costo y solicita el viaje.";
+                document.getElementById('instruccionMapa').innerHTML = "✅ Ruta lista. Puedes solicitar tu unidad.";
                 calcularTarifaYRuta();
             }
         }
@@ -914,10 +950,7 @@
             if (!error) {
                 alert("Has cancelado el viaje.");
                 viajeActualId = null;
-                document.getElementById('statusCliente').innerHTML = `
-                    <div class="trip-box cancelled">
-                        <strong>Viaje Cancelado</strong>
-                    </div>`;
+                document.getElementById('statusCliente').innerHTML = `<div class="trip-box cancelled"><strong>Viaje Cancelado</strong></div>`;
                 document.getElementById('btnPedirViaje').disabled = false;
             }
         }
@@ -935,18 +968,13 @@
                                 Monto a cancelar: <strong>$${payload.new.precio_estimado}</strong>
                             </div>`;
                     } else if (payload.new.estado === 'cancelado') {
-                        document.getElementById('statusCliente').innerHTML = `
-                            <div class="trip-box cancelled">
-                                <strong>El viaje fue cancelado.</strong>
-                            </div>`;
+                        document.getElementById('statusCliente').innerHTML = `<div class="trip-box cancelled"><strong>El viaje fue cancelado.</strong></div>`;
                         document.getElementById('btnPedirViaje').disabled = false;
                     }
                 }).subscribe();
         }
 
-        // ==========================================
-        // NAVEGACIÓN CONDUCTOR Y RECEPCIÓN DE VIAJES
-        // ==========================================
+        // PANEL Y LISTA DE VIAJES CONDUCTOR
         function iniciarGeolocalizacionConductor() {
             if (!("geolocation" in navigator) || !conductorIdActual) return;
 
@@ -966,10 +994,20 @@
             const contenedor = document.getElementById('listaViajes');
             if (!client) return;
 
-            contenedor.innerHTML = "<div class='trip-box'>Cargando solicitudes...</div>";
+            contenedor.innerHTML = "<div class='trip-box'>Cargando solicitudes activas...</div>";
 
-            const { data: viajesPendientes } = await client.from('viajes').select('*').eq('estado', 'solicitado');
+            const { data: viajesPendientes, error } = await client
+                .from('viajes')
+                .select('*')
+                .eq('estado', 'solicitado')
+                .order('created_at', { ascending: false });
+
             contenedor.innerHTML = "";
+
+            if (error) {
+                contenedor.innerHTML = `<div class='trip-box error-msg' style='display:block'>Error: ${error.message}</div>`;
+                return;
+            }
 
             if (!viajesPendientes || viajesPendientes.length === 0) {
                 contenedor.innerHTML = "<div class='trip-box' id='msgSinViajes'>Esperando solicitudes en tiempo real...</div>";
@@ -990,9 +1028,7 @@
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes' }, payload => {
                     if (payload.new.estado !== 'solicitado') {
-                        const tarjeta = document.getElementById(`viaje-${payload.new.id}`);
-                        if (tarjeta) tarjeta.remove();
-                        
+                        document.getElementById(`viaje-${payload.new.id}`)?.remove();
                         if (contenedor.children.length === 0) {
                             contenedor.innerHTML = "<div class='trip-box' id='msgSinViajes'>Esperando solicitudes en tiempo real...</div>";
                         }
@@ -1023,13 +1059,25 @@
             const client = getClient();
             if (!client) return;
 
-            const { error } = await client.from('viajes').update({ estado: 'aceptado', conductor_id: conductorIdActual }).eq('id', viajeId);
+            if (!conductorIdActual) {
+                return alert("Error: No se ha detectado tu ID de conductor. Vuelve a iniciar sesión.");
+            }
 
-            if (!error) {
-                alert("¡Has aceptado el viaje!");
+            const { data, error } = await client
+                .from('viajes')
+                .update({ estado: 'aceptado', conductor_id: conductorIdActual })
+                .eq('id', viajeId)
+                .eq('estado', 'solicitado')
+                .select();
+
+            if (error) {
+                alert("Error al aceptar viaje: " + error.message);
+            } else if (!data || data.length === 0) {
+                alert("Este viaje ya fue tomado por otro conductor o fue cancelado.");
                 document.getElementById(`viaje-${viajeId}`)?.remove();
             } else {
-                alert("Este viaje ya no está disponible.");
+                alert("¡Has aceptado el viaje con éxito!");
+                document.getElementById(`viaje-${viajeId}`)?.remove();
             }
         }
 
