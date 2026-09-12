@@ -927,6 +927,9 @@
                     viajeActualId = data.id;
                     escucharEstadoViajeCliente(data.id);
                     mostrarEstadoBuscandoViaje();
+                } else if (error) {
+                    alert("Error al crear viaje: " + error.message);
+                    document.getElementById('btnPedirViaje').disabled = false;
                 }
             } catch (e) { console.error("Error solicitando viaje:", e); }
         }
@@ -1000,7 +1003,7 @@
                 .from('viajes')
                 .select('*')
                 .eq('estado', 'solicitado')
-                .order('created_at', { ascending: false });
+                .order('id', { ascending: false });
 
             contenedor.innerHTML = "";
 
