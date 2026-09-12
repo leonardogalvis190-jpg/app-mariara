@@ -110,6 +110,32 @@
             flex: 1;
         }
 
+        .nav-subtabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 10px;
+        }
+
+        .nav-subtabs button {
+            margin: 0;
+            padding: 8px;
+            font-size: 13px;
+            background: transparent;
+            color: #64748b;
+            border: none;
+            box-shadow: none;
+        }
+
+        .nav-subtabs button.active {
+            background: #ffffff;
+            color: var(--primary);
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
         button {
             background: var(--primary);
             color: white;
@@ -211,6 +237,29 @@
             background: #fef2f2;
         }
 
+        .history-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-solicitado { background: #fef3c7; color: #92400e; }
+        .status-aceptado { background: #dbeafe; color: #1e40af; }
+        .status-completado { background: #d1fae5; color: #065f46; }
+        .status-cancelado { background: #fee2e2; color: #991b1b; }
+
         .pulse-text {
             animation: pulse 1.5s infinite;
         }
@@ -308,7 +357,7 @@
             <button class="btn-back" type="button" onclick="irA('seccionInicio')">← Volver al Inicio</button>
             <h2>🚖 Módulo Pasajero</h2>
             
-            <!-- FORMULARIO PASAJERO CON PESTAÑAS -->
+            <!-- FORMULARIO PASAJERO -->
             <div id="formRegistroPasajero">
                 <p class="subtitle">Inicia sesión o regístrate como pasajero</p>
 
@@ -323,7 +372,6 @@
                 <label>Contraseña</label>
                 <input type="password" id="pasPassword" placeholder="****** (mínimo 6 caracteres)" required>
 
-                <!-- CAMPOS EXTRA PARA REGISTRO DE PASAJERO -->
                 <div id="camposExtraPasajero" style="display: none;">
                     <label>Nombre y Apellido</label>
                     <input type="text" id="pasNombre" placeholder="Ej. Juan Pérez">
@@ -340,35 +388,50 @@
                 <div id="msgErrorPasajero" class="error-msg"></div>
             </div>
 
-            <!-- PANEL SOLICITUD DE VIAJE -->
+            <!-- PANEL PASAJERO AUTENTICADO -->
             <div id="panelSolicitudPasajero" style="display: none;">
                 <div class="user-greeting">
                     <span>👋 Hola, <strong id="lblNombrePasajero">Pasajero</strong></span>
                     <a href="#" onclick="cerrarSesion()" style="color:var(--danger); text-decoration:none;">Cerrar Sesión</a>
                 </div>
 
-                <div class="map-instruction" id="instruccionMapa">
-                    📍 Haz clic en el mapa para marcar el <strong>Punto de Salida</strong>.
+                <!-- Pestañas Internas Pasajero -->
+                <div class="nav-subtabs">
+                    <button id="subtabPedirPasajero" class="active" onclick="verSubtabPasajero('pedir')">Pedir Viaje</button>
+                    <button id="subtabHistorialPasajero" onclick="verSubtabPasajero('historial')">📜 Mi Historial</button>
                 </div>
 
-                <div id="mapaPasajero"></div>
+                <!-- SUBTAB: PEDIR VIAJE -->
+                <div id="subseccionPedirPasajero">
+                    <div class="map-instruction" id="instruccionMapa">
+                        📍 Haz clic en el mapa para marcar el <strong>Punto de Salida</strong>.
+                    </div>
 
-                <label>Vehículo Disponible</label>
-                <select id="vehiculo" onchange="calcularTarifaYRuta()">
-                    <option value="moto">🛵 Moto</option>
-                    <option value="carro">🚗 Carro</option>
-                </select>
+                    <div id="mapaPasajero"></div>
 
-                <div class="trip-box" style="margin-top:8px; background:#f8fafc; border-left-color: var(--secondary);">
-                    <strong>Distancia calculada:</strong> <span id="lblDistancia">0.0 km</span><br>
-                    <strong>Monto estimado:</strong> <span id="lblPrecio" style="font-size:16px; font-weight:bold; color:var(--success)">$0.00</span>
-                    <div id="badgeHorario"></div>
+                    <label>Vehículo Disponible</label>
+                    <select id="vehiculo" onchange="calcularTarifaYRuta()">
+                        <option value="moto">🛵 Moto</option>
+                        <option value="carro">🚗 Carro</option>
+                    </select>
+
+                    <div class="trip-box" style="margin-top:8px; background:#f8fafc; border-left-color: var(--secondary);">
+                        <strong>Distancia calculada:</strong> <span id="lblDistancia">0.0 km</span><br>
+                        <strong>Monto estimado:</strong> <span id="lblPrecio" style="font-size:16px; font-weight:bold; color:var(--success)">$0.00</span>
+                        <div id="badgeHorario"></div>
+                    </div>
+                    
+                    <button id="btnPedirViaje" type="button" disabled onclick="solicitarViaje()">Pedir Conductor Ahora</button>
+                    <button type="button" class="btn-back" style="width:100%; margin-top:6px;" onclick="reiniciarPuntosMapa()">🔄 Reiniciar Puntos del Mapa</button>
+                    
+                    <div id="statusCliente"></div>
                 </div>
-                
-                <button id="btnPedirViaje" type="button" disabled onclick="solicitarViaje()">Pedir Conductor Ahora</button>
-                <button type="button" class="btn-back" style="width:100%; margin-top:6px;" onclick="reiniciarPuntosMapa()">🔄 Reiniciar Puntos del Mapa</button>
-                
-                <div id="statusCliente"></div>
+
+                <!-- SUBTAB: HISTORIAL PASAJERO -->
+                <div id="subseccionHistorialPasajero" style="display: none;">
+                    <button type="button" class="btn-back" style="width:100%; margin-bottom:10px;" onclick="cargarHistorialPasajero()">🔄 Actualizar Historial</button>
+                    <div id="listaHistorialPasajero"></div>
+                </div>
             </div>
         </div>
 
@@ -380,7 +443,6 @@
             <div id="formRegistroConductor">
                 <p class="subtitle">Accede a tu cuenta o regístrate como conductor</p>
 
-                <!-- Pestañas de Alternancia -->
                 <div class="tab-group">
                     <button type="button" id="tabLoginCond" onclick="cambiarModoConductor('login')">Iniciar Sesión</button>
                     <button type="button" id="tabRegisterCond" class="btn-secondary" onclick="cambiarModoConductor('registro')">Registrarse</button>
@@ -392,7 +454,6 @@
                 <label>Contraseña</label>
                 <input type="password" id="condPassword" placeholder="******" required>
 
-                <!-- Campos Extra (Exclusivos para Registro) -->
                 <div id="camposExtraConductor" style="display: none;">
                     <label>Datos Personales</label>
                     <input type="text" id="regNombre" placeholder="Nombre completo">
@@ -440,15 +501,30 @@
                 <button class="btn-logout" style="width:100%;" type="button" onclick="cerrarSesion()">Cerrar Sesión</button>
             </div>
 
+            <!-- PANEL CONDUCTOR AUTENTICADO -->
             <div id="panelActivoConductor" style="display: none;">
                 <div class="user-greeting">
                     <span>🛵 Conductor: <strong id="lblNombreConductor">Aprobado</strong></span>
                     <a href="#" onclick="cerrarSesion()" style="color:var(--danger); text-decoration:none;">Cerrar Sesión</a>
                 </div>
 
-                <button id="btnActivarRecepcion" style="background: var(--success);" type="button" onclick="escucharViajes()">Activar Recepción de Viajes</button>
+                <!-- Pestañas Internas Conductor -->
+                <div class="nav-subtabs">
+                    <button id="subtabRadarConductor" class="active" onclick="verSubtabConductor('radar')">Radar Activo</button>
+                    <button id="subtabHistorialConductor" onclick="verSubtabConductor('historial')">📜 Mi Historial</button>
+                </div>
 
-                <div id="listaViajes"></div>
+                <!-- SUBTAB: RADAR VIAJES -->
+                <div id="subseccionRadarConductor">
+                    <button id="btnActivarRecepcion" style="background: var(--success);" type="button" onclick="escucharViajes()">Activar Recepción de Viajes</button>
+                    <div id="listaViajes"></div>
+                </div>
+
+                <!-- SUBTAB: HISTORIAL CONDUCTOR -->
+                <div id="subseccionHistorialConductor" style="display: none;">
+                    <button type="button" class="btn-back" style="width:100%; margin-bottom:10px;" onclick="cargarHistorialConductor()">🔄 Actualizar Historial</button>
+                    <div id="listaHistorialConductor"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -456,7 +532,6 @@
     <!-- SDK Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // CONFIGURACIÓN DE SUPABASE
         const SUPABASE_URL = "https://ryjyzslrjdrmcdhgjcmb.supabase.co";
         const SUPABASE_KEY = "sb_publishable_eDxke8Rp8mKR1yjWrmJ63g_5847bVkS";
         let supabaseClient = null;
@@ -466,7 +541,6 @@
         let watchPosId = null;
         let canalViajesSubscrito = null;
 
-        // Mapa Pasajero
         let map = null;
         let markerOrigen = null, markerDestino = null, rutaPolyline = null;
         let coordsOrigen = null, coordsDestino = null;
@@ -501,7 +575,48 @@
             }
         }
 
-        // CONTROL DE PESTAÑAS PASAJERO Y CONDUCTOR
+        // PESTAÑAS INTERNAS DE MÓDULOS
+        function verSubtabPasajero(tab) {
+            const btnPedir = document.getElementById('subtabPedirPasajero');
+            const btnHistorial = document.getElementById('subtabHistorialPasajero');
+            const secPedir = document.getElementById('subseccionPedirPasajero');
+            const secHistorial = document.getElementById('subseccionHistorialPasajero');
+
+            if (tab === 'pedir') {
+                btnPedir.classList.add('active');
+                btnHistorial.classList.remove('active');
+                secPedir.style.display = 'block';
+                secHistorial.style.display = 'none';
+                setTimeout(() => { if (map) map.invalidateSize(); }, 200);
+            } else {
+                btnHistorial.classList.add('active');
+                btnPedir.classList.remove('active');
+                secHistorial.style.display = 'block';
+                secPedir.style.display = 'none';
+                cargarHistorialPasajero();
+            }
+        }
+
+        function verSubtabConductor(tab) {
+            const btnRadar = document.getElementById('subtabRadarConductor');
+            const btnHistorial = document.getElementById('subtabHistorialConductor');
+            const secRadar = document.getElementById('subseccionRadarConductor');
+            const secHistorial = document.getElementById('subseccionHistorialConductor');
+
+            if (tab === 'radar') {
+                btnRadar.classList.add('active');
+                btnHistorial.classList.remove('active');
+                secRadar.style.display = 'block';
+                secHistorial.style.display = 'none';
+            } else {
+                btnHistorial.classList.add('active');
+                btnRadar.classList.remove('active');
+                secHistorial.style.display = 'block';
+                secRadar.style.display = 'none';
+                cargarHistorialConductor();
+            }
+        }
+
         function cambiarModoPasajero(modo) {
             limpiarError('msgErrorPasajero');
             const camposExtra = document.getElementById('camposExtraPasajero');
@@ -548,7 +663,6 @@
             }
         }
 
-        // TARIFAS Y HORARIOS
         function obtenerMultiplicadorHorario() {
             const hora = new Date().getHours();
             if (hora >= 22 || hora < 5) {
@@ -575,7 +689,6 @@
             };
         }
 
-        // SESIÓN Y AUTENTICACIÓN (CORREGIDO)
         async function verificarSesionSupabase() {
             const client = getClient();
             if (!client) return;
@@ -588,7 +701,6 @@
 
                 if (profile) {
                     if (profile.role === 'conductor') {
-                        // Se verifica si la tabla 'conductores' utiliza un ID independiente
                         const { data: condData } = await client.from('conductores').select('id').eq('usuario_id', user.id).single();
                         conductorIdActual = condData ? condData.id : user.id;
 
@@ -791,7 +903,6 @@
             }
         }
 
-        // FUNCIONALIDAD DE MAPA
         function inicializarMapaPasajero() {
             if (map) return;
 
@@ -908,12 +1019,13 @@
         async function solicitarViaje() {
             if (!coordsOrigen || !coordsDestino) return alert("Selecciona origen y destino.");
             const client = getClient();
-            if (!client) return;
+            if (!client || !pasajeroIdActual) return alert("No se ha iniciado sesión como pasajero.");
 
             document.getElementById('btnPedirViaje').disabled = true;
 
             try {
                 const { data, error } = await client.from('viajes').insert([{
+                    pasajero_id: pasajeroIdActual,
                     origen_texto: "Ubicación en Mapa",
                     destino_texto: "Destino en Mapa",
                     lat_origen: coordsOrigen.lat,
@@ -980,7 +1092,88 @@
                 }).subscribe();
         }
 
-        // PANEL Y LISTA DE VIAJES CONDUCTOR
+        // HISTORIAL PASAJERO
+        async function cargarHistorialPasajero() {
+            const client = getClient();
+            const contenedor = document.getElementById('listaHistorialPasajero');
+            if (!client || !pasajeroIdActual) return;
+
+            contenedor.innerHTML = "<div class='trip-box'>Cargando tu historial...</div>";
+
+            const { data: viajes, error } = await client
+                .from('viajes')
+                .select('*')
+                .eq('pasajero_id', pasajeroIdActual)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                contenedor.innerHTML = `<div class='trip-box cancelled'>Error al cargar historial: ${error.message}</div>`;
+                return;
+            }
+
+            if (!viajes || viajes.length === 0) {
+                contenedor.innerHTML = "<div class='trip-box'>Aún no has realizado ningún viaje.</div>";
+                return;
+            }
+
+            contenedor.innerHTML = viajes.map(v => {
+                const fecha = new Date(v.created_at || Date.now()).toLocaleDateString('es-VE', {
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                return `
+                    <div class="history-card">
+                        <div style="display:flex; justify-shadow:space-between; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span class="status-badge status-${v.estado}">${v.estado}</span>
+                            <span style="font-size:11px; color:#64748b;">${fecha}</span>
+                        </div>
+                        <strong>Distancia:</strong> ${v.distancia_km} km<br>
+                        <strong>Monto:</strong> <span style="color:var(--success); font-weight:bold;">$${v.precio_estimado}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // HISTORIAL CONDUCTOR
+        async function cargarHistorialConductor() {
+            const client = getClient();
+            const contenedor = document.getElementById('listaHistorialConductor');
+            if (!client || !conductorIdActual) return;
+
+            contenedor.innerHTML = "<div class='trip-box'>Cargando tu historial...</div>";
+
+            const { data: viajes, error } = await client
+                .from('viajes')
+                .select('*')
+                .eq('conductor_id', conductorIdActual)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                contenedor.innerHTML = `<div class='trip-box cancelled'>Error al cargar historial: ${error.message}</div>`;
+                return;
+            }
+
+            if (!viajes || viajes.length === 0) {
+                contenedor.innerHTML = "<div class='trip-box'>Aún no has realizado viajes como conductor.</div>";
+                return;
+            }
+
+            contenedor.innerHTML = viajes.map(v => {
+                const fecha = new Date(v.created_at || Date.now()).toLocaleDateString('es-VE', {
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                return `
+                    <div class="history-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span class="status-badge status-${v.estado}">${v.estado}</span>
+                            <span style="font-size:11px; color:#64748b;">${fecha}</span>
+                        </div>
+                        <strong>Distancia:</strong> ${v.distancia_km} km<br>
+                        <strong>Ganancia estimada:</strong> <span style="color:var(--success); font-weight:bold;">$${v.precio_estimado}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
         function iniciarGeolocalizacionConductor() {
             if (!("geolocation" in navigator) || !conductorIdActual) return;
 
@@ -1061,7 +1254,6 @@
             contenedor.prepend(elem);
         }
 
-        // FUNCIÓN ACEPTAR VIAJE (CORREGIDA CON FALLBACK DE USER ID)
         async function aceptarViaje(viajeId) {
             const client = getClient();
             if (!client) return;
@@ -1077,7 +1269,6 @@
                 .eq('estado', 'solicitado')
                 .select();
 
-            // Reintento usando el user.id de la sesión si la tabla exige la clave de usuarios/profiles
             if (error && (error.code === '23503' || error.message.includes('foreign key'))) {
                 const { data: { user } } = await client.auth.getUser();
                 if (user) {
