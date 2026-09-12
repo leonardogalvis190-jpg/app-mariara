@@ -575,7 +575,7 @@
             };
         }
 
-        // SESIÓN Y AUTENTICACIÓN
+        // SESIÓN Y AUTENTICACIÓN (CORREGIDO)
         async function verificarSesionSupabase() {
             const client = getClient();
             if (!client) return;
@@ -588,7 +588,10 @@
 
                 if (profile) {
                     if (profile.role === 'conductor') {
-                        conductorIdActual = profile.id;
+                        // Se verifica si la tabla 'conductores' utiliza un ID independiente
+                        const { data: condData } = await client.from('conductores').select('id').eq('usuario_id', user.id).single();
+                        conductorIdActual = condData ? condData.id : user.id;
+
                         if (profile.aprobado) {
                             document.getElementById('lblNombreConductor').innerText = profile.nombre || user.email;
                             document.getElementById('formRegistroConductor').style.display = 'none';
@@ -1058,6 +1061,7 @@
             contenedor.prepend(elem);
         }
 
+        // FUNCIÓN ACEPTAR VIAJE (CORREGIDA CON FALLBACK DE USER ID)
         async function aceptarViaje(viajeId) {
             const client = getClient();
             if (!client) return;
@@ -1066,12 +1070,28 @@
                 return alert("Error: No se ha detectado tu ID de conductor. Vuelve a iniciar sesión.");
             }
 
-            const { data, error } = await client
+            let { data, error } = await client
                 .from('viajes')
                 .update({ estado: 'aceptado', conductor_id: conductorIdActual })
                 .eq('id', viajeId)
                 .eq('estado', 'solicitado')
                 .select();
+
+            // Reintento usando el user.id de la sesión si la tabla exige la clave de usuarios/profiles
+            if (error && (error.code === '23503' || error.message.includes('foreign key'))) {
+                const { data: { user } } = await client.auth.getUser();
+                if (user) {
+                    const reintento = await client
+                        .from('viajes')
+                        .update({ estado: 'aceptado', conductor_id: user.id })
+                        .eq('id', viajeId)
+                        .eq('estado', 'solicitado')
+                        .select();
+                    
+                    data = reintento.data;
+                    error = reintento.error;
+                }
+            }
 
             if (error) {
                 alert("Error al aceptar viaje: " + error.message);
